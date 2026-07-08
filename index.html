@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password — AgroThink</title>
+  <meta name="description" content="Reset your AgroThink account password securely.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root {
+      --primary: #4CAF50;
+      --primary-dark: #388E3C;
+      --primary-light: #81C784;
+      --secondary: #8BC34A;
+      --bg: #F5F5F5;
+      --card: #FFFFFF;
+      --text: #212121;
+      --text-light: #757575;
+      --error: #D32F2F;
+      --success: #388E3C;
+      --shadow: rgba(0,0,0,0.1);
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated background blobs */
+    .bg-decoration {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.25;
+      animation: float 8s ease-in-out infinite;
+    }
+    .blob-1 {
+      width: 400px; height: 400px;
+      background: var(--primary);
+      top: -10%; left: -5%;
+      animation-delay: 0s;
+    }
+    .blob-2 {
+      width: 350px; height: 350px;
+      background: var(--secondary);
+      bottom: -10%; right: -5%;
+      animation-delay: -3s;
+    }
+    .blob-3 {
+      width: 250px; height: 250px;
+      background: var(--primary-light);
+      top: 50%; left: 60%;
+      animation-delay: -5s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-15px, 15px) scale(0.95); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      margin: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px var(--shadow), 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid rgba(255,255,255,0.6);
+      padding: 40px 32px;
+      animation: slideUp 0.5s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo area */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+    }
+    .logo-icon svg {
+      width: 30px;
+      height: 30px;
+      fill: #fff;
+    }
+    .brand-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: 14px;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .input-wrapper {
+      position: relative;
+    }
+    .input-wrapper input {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: #fff;
+      border: 2px solid #E0E0E0;
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .input-wrapper input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12);
+    }
+    .input-wrapper input.error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+    }
+    .input-wrapper .icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      fill: var(--text-light);
+      pointer-events: none;
+      transition: fill 0.25s;
+    }
+    .input-wrapper input:focus ~ .icon {
+      fill: var(--primary);
+    }
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .toggle-password svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-light);
+      transition: fill 0.2s;
+    }
+    .toggle-password:hover svg {
+      fill: var(--text);
+    }
+
+    /* Password strength */
+    .strength-bar {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .strength-bar .segment {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: #E0E0E0;
+      transition: background 0.3s;
+    }
+    .strength-bar.weak .segment:nth-child(1) { background: var(--error); }
+    .strength-bar.fair .segment:nth-child(1),
+    .strength-bar.fair .segment:nth-child(2) { background: #FFA000; }
+    .strength-bar.good .segment:nth-child(1),
+    .strength-bar.good .segment:nth-child(2),
+    .strength-bar.good .segment:nth-child(3) { background: var(--secondary); }
+    .strength-bar.strong .segment { background: var(--success); }
+    .strength-label {
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 4px;
+      color: var(--text-light);
+      transition: color 0.3s;
+    }
+    .strength-bar.weak ~ .strength-label { color: var(--error); }
+    .strength-bar.fair ~ .strength-label { color: #FFA000; }
+    .strength-bar.good ~ .strength-label { color: var(--secondary); }
+    .strength-bar.strong ~ .strength-label { color: var(--success); }
+
+    .error-text {
+      font-size: 12px;
+      color: var(--error);
+      margin-top: 4px;
+      display: none;
+    }
+    .error-text.show { display: block; }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.25s, opacity 0.25s;
+      box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(76, 175, 80, 0.4);
+    }
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn.loading .spinner { display: block; }
+    .btn.loading .btn-text { display: none; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Success state */
+    .success-state {
+      display: none;
+      text-align: center;
+      animation: slideUp 0.4s ease-out;
+    }
+    .success-state.show { display: block; }
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both;
+    }
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .success-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: #fff;
+    }
+    .success-state h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .success-state p {
+      font-size: 14px;
+      color: var(--text-light);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    /* Error state (no token) */
+    .error-state {
+      display: none;
+      text-align: center;
+      animation: slideUp 0.4s ease-out;
+    }
+    .error-state.show { display: block; }
+    .error-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #D32F2F, #F44336);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .error-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: #fff;
+    }
+    .error-state h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .error-state p {
+      font-size: 14px;
+      color: var(--text-light);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    /* Alert banner */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      animation: slideUp 0.3s ease-out;
+    }
+    .alert.show { display: flex; }
+    .alert.alert-error {
+      background: rgba(211, 47, 47, 0.08);
+      color: var(--error);
+      border: 1px solid rgba(211, 47, 47, 0.15);
+    }
+    .alert svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      fill: currentColor;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .card { padding: 32px 24px; }
+      .header h1 { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-decoration">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <!-- Logo -->
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M17.12 10a6.44 6.44 0 0 0-1.44-2.23A6.08 6.08 0 0 0 12 6.07a6.08 6.08 0 0 0-3.68 1.7A6.44 6.44 0 0 0 6.88 10a7.65 7.65 0 0 0-.38 2.43A7.06 7.06 0 0 0 8 16.29V19a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.71a7.06 7.06 0 0 0 1.5-3.86 7.65 7.65 0 0 0-.38-2.43zM14 18H10v-1h4zm.5-4.14l-.5.36V16h-4v-1.78l-.5-.36A5.09 5.09 0 0 1 8.5 12.4a5.73 5.73 0 0 1 .28-1.82 4.54 4.54 0 0 1 1-1.56A4.09 4.09 0 0 1 12 8.07a4.09 4.09 0 0 1 2.22.95 4.54 4.54 0 0 1 1 1.56 5.73 5.73 0 0 1 .28 1.82 5.09 5.09 0 0 1-1 1.46zM12 2a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V3a1 1 0 0 0-1-1zm7.07 3.93a1 1 0 0 0-1.41 0l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71a1 1 0 0 0 0-1.41zM22 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2zM4.93 5.93a1 1 0 0 0-1.41 1.41l.71.71A1 1 0 0 0 5.64 6.64zM3 11H2a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2z"/></svg>
+        </div>
+        <div class="brand-name">AgroThink</div>
+      </div>
+
+      <!-- Error state (invalid/expired link) -->
+      <div id="errorState" class="error-state">
+        <div class="error-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <h2>Invalid or Expired Link</h2>
+        <p>This password reset link is no longer valid. Please request a new one from the AgroThink app.</p>
+      </div>
+
+      <!-- Reset form -->
+      <div id="formState">
+        <div class="header">
+          <h1>Create New Password</h1>
+          <p>Enter your new password below to reset your account access.</p>
+        </div>
+
+        <div id="alertBox" class="alert alert-error">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          <span id="alertText"></span>
+        </div>
+
+        <form id="resetForm" novalidate>
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="newPassword" placeholder="Enter new password" autocomplete="new-password" required>
+              <svg class="icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+              <button type="button" class="toggle-password" data-target="newPassword" aria-label="Toggle password visibility">
+                <svg class="eye-open" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                <svg class="eye-closed" style="display:none" viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.804 11.804 0 001 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+              </button>
+            </div>
+            <div class="strength-bar" id="strengthBar">
+              <div class="segment"></div>
+              <div class="segment"></div>
+              <div class="segment"></div>
+              <div class="segment"></div>
+            </div>
+            <div class="strength-label" id="strengthLabel"></div>
+            <div class="error-text" id="newPasswordError">Password must be at least 6 characters</div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="confirmPassword" placeholder="Re-enter new password" autocomplete="new-password" required>
+              <svg class="icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+              <button type="button" class="toggle-password" data-target="confirmPassword" aria-label="Toggle password visibility">
+                <svg class="eye-open" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                <svg class="eye-closed" style="display:none" viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.804 11.804 0 001 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+              </button>
+            </div>
+            <div class="error-text" id="confirmPasswordError">Passwords do not match</div>
+          </div>
+
+          <button type="submit" class="btn" id="submitBtn">
+            <span class="spinner"></span>
+            <span class="btn-text">Reset Password</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Success state -->
+      <div id="successState" class="success-state">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+        <h2>Password Updated!</h2>
+        <p>Your password has been reset successfully. You can now close this page and log in to AgroThink with your new password.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      &copy; 2025 AgroThink &mdash; Smart Farming Assistant
+    </div>
+  </div>
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    (() => {
+      // ── Supabase config ──
+      const SUPABASE_URL = 'https://zfeblglfkoyvrpmszsxx.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmZWJsZ2xma295dnJwbXN6c3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTQ5ODgsImV4cCI6MjA4ODg5MDk4OH0.FGzt9oSn5jpCByKNbm5Oit_fBKIJzA9SI_SwIAOuVW4';
+
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // ── DOM refs ──
+      const formState = document.getElementById('formState');
+      const successState = document.getElementById('successState');
+      const errorState = document.getElementById('errorState');
+      const resetForm = document.getElementById('resetForm');
+      const newPassword = document.getElementById('newPassword');
+      const confirmPassword = document.getElementById('confirmPassword');
+      const newPasswordError = document.getElementById('newPasswordError');
+      const confirmPasswordError = document.getElementById('confirmPasswordError');
+      const submitBtn = document.getElementById('submitBtn');
+      const alertBox = document.getElementById('alertBox');
+      const alertText = document.getElementById('alertText');
+      const strengthBar = document.getElementById('strengthBar');
+      const strengthLabel = document.getElementById('strengthLabel');
+
+      // ── Check for recovery session from Supabase ──
+      let hasSession = false;
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          hasSession = true;
+          formState.style.display = 'block';
+          errorState.classList.remove('show');
+        }
+      });
+
+      // Check URL hash for tokens (Supabase puts them in the hash fragment)
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const accessToken = params.get('access_token');
+      const type = params.get('type');
+
+      if (accessToken && type === 'recovery') {
+        // Token is present — Supabase SDK will pick it up via onAuthStateChange
+        formState.style.display = 'block';
+        hasSession = true;
+      } else {
+        // Also check query params (some Supabase configurations use query params)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+          // PKCE flow — exchange the code for a session
+          hasSession = true;
+          formState.style.display = 'block';
+          supabase.auth.exchangeCodeForSession(code).catch((err) => {
+            console.error('Code exchange failed:', err);
+            formState.style.display = 'none';
+            errorState.classList.add('show');
+            hasSession = false;
+          });
+        } else {
+          // No token and no code — show error
+          setTimeout(() => {
+            if (!hasSession) {
+              formState.style.display = 'none';
+              errorState.classList.add('show');
+            }
+          }, 1500);
+        }
+      }
+
+      // ── Password strength checker ──
+      function checkStrength(pw) {
+        let score = 0;
+        if (pw.length >= 6) score++;
+        if (pw.length >= 10) score++;
+        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+        if (/\d/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+        if (score <= 1) return { level: 'weak', label: 'Weak' };
+        if (score === 2) return { level: 'fair', label: 'Fair' };
+        if (score === 3) return { level: 'good', label: 'Good' };
+        return { level: 'strong', label: 'Strong' };
+      }
+
+      newPassword.addEventListener('input', () => {
+        const pw = newPassword.value;
+        if (pw.length === 0) {
+          strengthBar.className = 'strength-bar';
+          strengthLabel.textContent = '';
+          return;
+        }
+        const { level, label } = checkStrength(pw);
+        strengthBar.className = `strength-bar ${level}`;
+        strengthLabel.textContent = label;
+        newPasswordError.classList.remove('show');
+        newPassword.classList.remove('error');
+      });
+
+      confirmPassword.addEventListener('input', () => {
+        confirmPasswordError.classList.remove('show');
+        confirmPassword.classList.remove('error');
+      });
+
+      // ── Toggle password visibility ──
+      document.querySelectorAll('.toggle-password').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const input = document.getElementById(btn.dataset.target);
+          const isPassword = input.type === 'password';
+          input.type = isPassword ? 'text' : 'password';
+          btn.querySelector('.eye-open').style.display = isPassword ? 'none' : 'block';
+          btn.querySelector('.eye-closed').style.display = isPassword ? 'block' : 'none';
+        });
+      });
+
+      // ── Form submission ──
+      resetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alertBox.classList.remove('show');
+
+        const pw = newPassword.value;
+        const cpw = confirmPassword.value;
+        let valid = true;
+
+        if (pw.length < 6) {
+          newPasswordError.classList.add('show');
+          newPassword.classList.add('error');
+          valid = false;
+        }
+        if (pw !== cpw) {
+          confirmPasswordError.classList.add('show');
+          confirmPassword.classList.add('error');
+          valid = false;
+        }
+        if (!valid) return;
+
+        // Show loading
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+
+        try {
+          const { error } = await supabase.auth.updateUser({ password: pw });
+
+          if (error) throw error;
+
+          // Success!
+          formState.style.display = 'none';
+          successState.classList.add('show');
+        } catch (err) {
+          submitBtn.classList.remove('loading');
+          submitBtn.disabled = false;
+          alertText.textContent = err.message || 'Failed to update password. Please try again.';
+          alertBox.classList.add('show');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
