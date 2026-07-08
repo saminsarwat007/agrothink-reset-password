@@ -515,7 +515,7 @@
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    (() => {
+    (async () => {
       // ── Supabase config ──
       const SUPABASE_URL = 'https://zfeblglfkoyvrpmszsxx.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmZWJsZ2xma295dnJwbXN6c3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTQ5ODgsImV4cCI6MjA4ODg5MDk4OH0.FGzt9oSn5jpCByKNbm5Oit_fBKIJzA9SI_SwIAOuVW4';
@@ -537,51 +537,79 @@
       const strengthBar = document.getElementById('strengthBar');
       const strengthLabel = document.getElementById('strengthLabel');
 
-      // ── Check for recovery session from Supabase ──
-      let hasSession = false;
+      // ── Hide form initially, show loading ──
+      formState.style.display = 'none';
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
 
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-          hasSession = true;
-          formState.style.display = 'block';
-          errorState.classList.remove('show');
-        }
-      });
+      // ── Establish session from the URL tokens/code ──
+      let sessionReady = false;
 
-      // Check URL hash for tokens (Supabase puts them in the hash fragment)
-      const hash = window.location.hash;
-      const params = new URLSearchParams(hash.replace('#', ''));
-      const accessToken = params.get('access_token');
-      const type = params.get('type');
-
-      if (accessToken && type === 'recovery') {
-        // Token is present — Supabase SDK will pick it up via onAuthStateChange
-        formState.style.display = 'block';
-        hasSession = true;
-      } else {
-        // Also check query params (some Supabase configurations use query params)
+      try {
+        // Method 1: Check for PKCE code in query params (Supabase default flow)
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
+
         if (code) {
-          // PKCE flow — exchange the code for a session
-          hasSession = true;
-          formState.style.display = 'block';
-          supabase.auth.exchangeCodeForSession(code).catch((err) => {
-            console.error('Code exchange failed:', err);
-            formState.style.display = 'none';
-            errorState.classList.add('show');
-            hasSession = false;
-          });
+          // PKCE flow — must exchange code for session and WAIT for it
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          sessionReady = true;
         } else {
-          // No token and no code — show error
-          setTimeout(() => {
-            if (!hasSession) {
-              formState.style.display = 'none';
-              errorState.classList.add('show');
+          // Method 2: Check for access_token in hash fragment (implicit flow)
+          const hash = window.location.hash;
+          if (hash) {
+            const hashParams = new URLSearchParams(hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+            const type = hashParams.get('type');
+
+            if (accessToken && type === 'recovery') {
+              // Set the session manually from hash tokens
+              const { data, error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+              if (error) throw error;
+              sessionReady = true;
             }
-          }, 1500);
+          }
         }
+
+        // Method 3: Check if the SDK auto-detected a session (e.g., from stored tokens)
+        if (!sessionReady) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            sessionReady = true;
+          }
+        }
+
+      } catch (err) {
+        console.error('Session init failed:', err);
+        sessionReady = false;
       }
+
+      // ── Show appropriate state ──
+      if (sessionReady) {
+        formState.style.display = 'block';
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+      } else {
+        formState.style.display = 'none';
+        errorState.classList.add('show');
+        return; // Stop — no valid session, nothing else to do
+      }
+
+      // ── Also listen for auth state change as a fallback ──
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY' && session) {
+          sessionReady = true;
+          formState.style.display = 'block';
+          errorState.classList.remove('show');
+          submitBtn.classList.remove('loading');
+          submitBtn.disabled = false;
+        }
+      });
 
       // ── Password strength checker ──
       function checkStrength(pw) {
@@ -654,8 +682,13 @@
         submitBtn.disabled = true;
 
         try {
-          const { error } = await supabase.auth.updateUser({ password: pw });
+          // Double-check session is still valid before updating
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            throw new Error('Your session has expired. Please request a new password reset link from the app.');
+          }
 
+          const { error } = await supabase.auth.updateUser({ password: pw });
           if (error) throw error;
 
           // Success!
