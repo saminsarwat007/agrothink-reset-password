@@ -545,7 +545,7 @@
       const strengthBar = document.getElementById('strengthBar');
       const strengthLabel = document.getElementById('strengthLabel');
 
-      // ── Hide form initially ──
+      // ── Hide form initially, show a loading state ──
       formState.style.display = 'none';
 
       // ── Establish session ──
@@ -553,81 +553,78 @@
       const fullUrl = window.location.href;
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
-      const hasCode = urlParams.has('code');
-      const hasToken = hash && hash.includes('access_token');
 
-      // If no tokens or code in URL at all, show error immediately
-      if (!hasCode && !hasToken) {
-        errorState.classList.add('show');
-        return;
+      // Detect all possible token formats from Supabase
+      const hasCode = urlParams.has('code');
+      const hasTokenHash = urlParams.has('token_hash');
+      const hasHashToken = hash && hash.includes('access_token');
+
+      // If absolutely nothing in the URL, show error
+      if (!hasCode && !hasTokenHash && !hasHashToken) {
+        // Wait a moment for SDK auto-detect to fire, then show error
+        await new Promise(r => setTimeout(r, 2000));
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          sessionReady = true;
+        } else {
+          errorState.classList.add('show');
+          return;
+        }
       }
 
-      try {
-        // Wait for Supabase SDK to detect and process the URL automatically.
-        // The SDK's detectSessionInUrl handles both PKCE codes and hash tokens.
-        // We listen for the auth state change event to confirm session is ready.
-        const session = await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Session establishment timed out'));
-          }, 10000); // 10 second timeout
-
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-              clearTimeout(timeout);
-              subscription.unsubscribe();
-              resolve(session);
-            }
-            if (event === 'TOKEN_REFRESHED' && session) {
-              clearTimeout(timeout);
-              subscription.unsubscribe();
-              resolve(session);
-            }
-          });
-
-          // Also try manual code exchange as a backup (in case SDK doesn't auto-detect)
-          if (hasCode) {
-            const code = urlParams.get('code');
-            supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
-              if (!error && data.session) {
-                clearTimeout(timeout);
-                subscription.unsubscribe();
-                resolve(data.session);
-              }
-            }).catch(() => {
-              // Ignore — let the onAuthStateChange handle it or timeout
+      if (!sessionReady) {
+        try {
+          // Method 1: token_hash + type (Supabase email OTP verification)
+          if (hasTokenHash) {
+            const tokenHash = urlParams.get('token_hash');
+            const type = urlParams.get('type') || 'recovery';
+            const { data, error } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type,
             });
+            if (error) throw error;
+            if (data.session) sessionReady = true;
           }
 
-          // For hash tokens, try setSession manually as backup
-          if (hasToken) {
+          // Method 2: PKCE code exchange
+          if (!sessionReady && hasCode) {
+            const code = urlParams.get('code');
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (error) throw error;
+            if (data.session) sessionReady = true;
+          }
+
+          // Method 3: Hash fragment tokens (implicit flow)
+          if (!sessionReady && hasHashToken) {
             const hashParams = new URLSearchParams(hash.substring(1));
             const accessToken = hashParams.get('access_token');
             const refreshToken = hashParams.get('refresh_token');
             if (accessToken) {
-              supabase.auth.setSession({
+              const { data, error } = await supabase.auth.setSession({
                 access_token: accessToken,
                 refresh_token: refreshToken || '',
-              }).then(({ data, error }) => {
-                if (!error && data.session) {
-                  clearTimeout(timeout);
-                  subscription.unsubscribe();
-                  resolve(data.session);
-                }
-              }).catch(() => {});
+              });
+              if (error) throw error;
+              if (data.session) sessionReady = true;
             }
           }
-        });
 
-        sessionReady = !!session;
-      } catch (err) {
-        console.error('Session init failed:', err);
+          // Method 4: SDK may have auto-detected — check getSession
+          if (!sessionReady) {
+            await new Promise(r => setTimeout(r, 1500));
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) sessionReady = true;
+          }
+        } catch (err) {
+          console.error('Session init failed:', err);
 
-        // Last resort: check if a session exists anyway
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          sessionReady = !!session;
-        } catch (e) {
-          sessionReady = false;
+          // Last resort fallback
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            sessionReady = !!session;
+          } catch (e) {
+            sessionReady = false;
+          }
         }
       }
 
