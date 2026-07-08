@@ -442,6 +442,11 @@
         </div>
         <h2>Invalid or Expired Link</h2>
         <p>This password reset link is no longer valid. Please request a new one from the AgroThink app.</p>
+        <!-- DEBUG: shows the URL info so we can fix the issue -->
+        <div id="debugInfo" style="margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;text-align:left;font-size:11px;word-break:break-all;color:#333;">
+          <strong>Debug Info (temporary):</strong><br>
+          <span id="debugUrl"></span>
+        </div>
       </div>
 
       <!-- Reset form -->
@@ -547,6 +552,16 @@
 
       // ── Hide form initially, show a loading state ──
       formState.style.display = 'none';
+
+      // ── Populate debug info ──
+      const debugUrl = document.getElementById('debugUrl');
+      if (debugUrl) {
+        debugUrl.innerHTML = 
+          '<b>URL:</b> ' + window.location.href + '<br>' +
+          '<b>Search:</b> ' + window.location.search + '<br>' +
+          '<b>Hash:</b> ' + window.location.hash + '<br>' +
+          '<b>Params:</b> ' + Array.from(new URLSearchParams(window.location.search)).map(p => p[0]+'='+p[1].substring(0,20)+'...').join(', ');
+      }
 
       // ── Establish session ──
       let sessionReady = false;
