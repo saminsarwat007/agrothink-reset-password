@@ -520,7 +520,15 @@
       const SUPABASE_URL = 'https://zfeblglfkoyvrpmszsxx.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmZWJsZ2xma295dnJwbXN6c3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTQ5ODgsImV4cCI6MjA4ODg5MDk4OH0.FGzt9oSn5jpCByKNbm5Oit_fBKIJzA9SI_SwIAOuVW4';
 
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Create client with auto URL detection enabled
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+          flowType: 'pkce',
+        },
+      });
 
       // ── DOM refs ──
       const formState = document.getElementById('formState');
@@ -537,56 +545,90 @@
       const strengthBar = document.getElementById('strengthBar');
       const strengthLabel = document.getElementById('strengthLabel');
 
-      // ── Hide form initially, show loading ──
+      // ── Hide form initially ──
       formState.style.display = 'none';
-      submitBtn.classList.add('loading');
-      submitBtn.disabled = true;
 
-      // ── Establish session from the URL tokens/code ──
+      // ── Establish session ──
       let sessionReady = false;
+      const fullUrl = window.location.href;
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      const hasCode = urlParams.has('code');
+      const hasToken = hash && hash.includes('access_token');
+
+      // If no tokens or code in URL at all, show error immediately
+      if (!hasCode && !hasToken) {
+        errorState.classList.add('show');
+        return;
+      }
 
       try {
-        // Method 1: Check for PKCE code in query params (Supabase default flow)
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
+        // Wait for Supabase SDK to detect and process the URL automatically.
+        // The SDK's detectSessionInUrl handles both PKCE codes and hash tokens.
+        // We listen for the auth state change event to confirm session is ready.
+        const session = await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Session establishment timed out'));
+          }, 10000); // 10 second timeout
 
-        if (code) {
-          // PKCE flow — must exchange code for session and WAIT for it
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-          sessionReady = true;
-        } else {
-          // Method 2: Check for access_token in hash fragment (implicit flow)
-          const hash = window.location.hash;
-          if (hash) {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+              clearTimeout(timeout);
+              subscription.unsubscribe();
+              resolve(session);
+            }
+            if (event === 'TOKEN_REFRESHED' && session) {
+              clearTimeout(timeout);
+              subscription.unsubscribe();
+              resolve(session);
+            }
+          });
+
+          // Also try manual code exchange as a backup (in case SDK doesn't auto-detect)
+          if (hasCode) {
+            const code = urlParams.get('code');
+            supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+              if (!error && data.session) {
+                clearTimeout(timeout);
+                subscription.unsubscribe();
+                resolve(data.session);
+              }
+            }).catch(() => {
+              // Ignore — let the onAuthStateChange handle it or timeout
+            });
+          }
+
+          // For hash tokens, try setSession manually as backup
+          if (hasToken) {
             const hashParams = new URLSearchParams(hash.substring(1));
             const accessToken = hashParams.get('access_token');
             const refreshToken = hashParams.get('refresh_token');
-            const type = hashParams.get('type');
-
-            if (accessToken && type === 'recovery') {
-              // Set the session manually from hash tokens
-              const { data, error } = await supabase.auth.setSession({
+            if (accessToken) {
+              supabase.auth.setSession({
                 access_token: accessToken,
-                refresh_token: refreshToken,
-              });
-              if (error) throw error;
-              sessionReady = true;
+                refresh_token: refreshToken || '',
+              }).then(({ data, error }) => {
+                if (!error && data.session) {
+                  clearTimeout(timeout);
+                  subscription.unsubscribe();
+                  resolve(data.session);
+                }
+              }).catch(() => {});
             }
           }
-        }
+        });
 
-        // Method 3: Check if the SDK auto-detected a session (e.g., from stored tokens)
-        if (!sessionReady) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            sessionReady = true;
-          }
-        }
-
+        sessionReady = !!session;
       } catch (err) {
         console.error('Session init failed:', err);
-        sessionReady = false;
+
+        // Last resort: check if a session exists anyway
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          sessionReady = !!session;
+        } catch (e) {
+          sessionReady = false;
+        }
       }
 
       // ── Show appropriate state ──
@@ -597,19 +639,8 @@
       } else {
         formState.style.display = 'none';
         errorState.classList.add('show');
-        return; // Stop — no valid session, nothing else to do
+        return;
       }
-
-      // ── Also listen for auth state change as a fallback ──
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY' && session) {
-          sessionReady = true;
-          formState.style.display = 'block';
-          errorState.classList.remove('show');
-          submitBtn.classList.remove('loading');
-          submitBtn.disabled = false;
-        }
-      });
 
       // ── Password strength checker ──
       function checkStrength(pw) {
